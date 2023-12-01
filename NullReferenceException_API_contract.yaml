@@ -1,0 +1,950 @@
+openapi: 3.0.0
+info:
+    version: 1.0.0
+    title: PoS system API contract by NullReferenceException
+    description: >
+        This is an OpenAPI 3.0 specification for building a a Point of Sale system API. Based on documentation
+        by ASPCOM team.
+servers:
+    - url: http://localhost
+tags:
+    - name: auth
+      description: Authentication and Authorization related endpoints
+    - name: orders
+      description: Order related endpoints
+    - name: reservation
+      description: Reservation related endpoints
+    - name: promotion
+      description: Discount or coupon
+    - name: services
+      description: Services endpoints
+paths:
+    /auth/login:
+        post:
+            tags:
+                - auth
+            summary: Log in
+            description: Log in to the system as an employee
+            operationId: logIn
+            requestBody:
+                required: true
+                description: User information
+                content:
+                    "application/json":
+                        schema:
+                            $ref: "#/components/schemas/AuthInfo"
+            responses:
+                200:
+                    description: Authentication successful
+                    content:
+                        "application/json":
+                            schema:
+                                $ref: "#/components/schemas/LogInResponse"
+                401:
+                    description: Authentication failure
+                    content:
+                        "application/json":
+                            schema:
+                                $ref: "#/components/schemas/AuthFailResponse"
+    /auth/logout:
+        post:
+            tags:
+                - auth
+            summary: Log out
+            description: Log out from the system
+            operationId: logOut
+            responses:
+                200:
+                    description: Logout successful
+                    content:
+                        "application/json":
+                            schema:
+                                $ref: "#/components/schemas/LogOutResponse"
+    /orders:
+        post:
+            tags:
+                - orders
+            summary: Create a new order
+            description: Endpoint for creating a new order
+            operationId: createOrder
+            requestBody:
+                required: true
+                description: Order information
+                content:
+                    "application/json":
+                        schema:
+                            $ref: "#/components/schemas/Order"
+            responses:
+                201:
+                    description: Order created successfully
+                    content:
+                        "application/json":
+                            schema:
+                                properties:
+                                    orderID:
+                                        type: string
+                                        example: "123414"
+                400:
+                    $ref: "#/components/responses/BadRequest"
+                401:
+                    $ref: "#/components/responses/Unauthorized"
+        get:
+            tags:
+                - orders
+            summary: Retrieve list of all orders
+            description: Endpoint for retrieving a list of all orders with optional filters
+            operationId: getOrders
+            parameters:
+              - name: startDate
+                in: query
+                description: Start date for filtering orders
+                required: false
+                schema:
+                    type: string
+                    format: date
+                    example: "2023-01-01"
+              - name: endDate
+                in: query
+                description: End date for filtering orders
+                required: false
+                schema:
+                    type: string
+                    format: date
+                    example: "2023-12-31"
+              - name: orderId
+                in: query
+                description: Filter by order ID
+                required: false
+                schema:
+                    type: string
+                    example: "order123"
+              - name: customerId
+                in: query
+                description: Filter by customer ID
+                required: false
+                schema:
+                    type: string
+                example: "cus123"
+            responses:
+                200:
+                    description: List of orders retrieved successfully
+                    content:
+                        "application/json":
+                            schema:
+                                $ref: "#/components/schemas/OrdersListResponse"
+                400:
+                    $ref: "#/components/responses/BadRequest"
+                401:
+                    $ref: "#/components/responses/Unauthorized"
+    /orders/{orderId}:
+        get:
+            tags:
+                - orders
+            summary: Retrieve details of a specific order
+            description: Endpoint for retrieving details of a specific order
+            operationId: getOrderById
+            parameters:
+              - name: orderId
+                in: path
+                description: ID of the order to retrieve
+                required: true
+                schema:
+                    type: string
+                    example: "1234214"
+            responses:
+                200:
+                    description: Order details retrieved successfully
+                    content:
+                        'application/json':
+                            schema:
+                                $ref: '#/components/schemas/Order'
+                400:
+                    $ref: '#/components/responses/BadRequest'
+                401:
+                    $ref: '#/components/responses/Unauthorized'
+                404:
+                    $ref: '#/components/responses/NotFoundResponse'
+        patch:
+            tags:
+                - orders
+            summary: Update an existing order
+            description: Endpoint for updating details of an existing order
+            operationId: updateOrderById
+            parameters:
+              - name: orderId
+                in: path
+                description: ID of the order to update
+                required: true
+                schema:
+                    type: string
+                    example: 'order123'
+            requestBody:
+                required: true
+                description: Updated order information
+                content:
+                    'application/json':
+                        schema:
+                            $ref: '#/components/schemas/Order'
+            responses:
+                200:
+                    description: Order updated successfully
+                400:
+                    $ref: '#/components/responses/BadRequest'
+                401:
+                    $ref: '#/components/responses/Unauthorized'
+                404:
+                    $ref: '#/components/responses/NotFoundResponse'
+        delete:
+            tags:
+                - orders
+            summary: Delete an existing order
+            description: Endpoint for deleting an existing order
+            operationId: deleteOrderById
+            parameters:
+              - name: orderId
+                in: path
+                description: ID of the order to delete
+                required: true
+                schema:
+                    type: string
+                example: 'order123'
+            responses:
+                204:
+                    description: Order deleted successfully
+                400:
+                    $ref: '#/components/responses/BadRequest'
+                401:
+                    $ref: '#/components/responses/Unauthorized'
+                404:
+                    $ref: '#/components/responses/NotFoundResponse'
+
+    /inventory/products:
+        get:
+            tags:
+                - inventory
+            summary: List all products in inventory
+            description: Retrieve a list of all products available in the inventory
+            operationId: listInventoryProducts
+            responses:
+                200:
+                    description: List of products retrieved successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/InventoryProductsResponse"
+                401:
+                    $ref: "#/components/responses/Unauthorized"
+                404:
+                    $ref: "#/components/responses/NotFoundResponse"
+        post:
+            tags:
+                - inventory
+            summary: Add a new product to the inventory
+            description: Add a new product to the inventory
+            operationId: addProductToInventory
+            requestBody:
+                required: true
+                description: Product information
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/Product"
+            responses:
+                201:
+                    description: Product added to the inventory successfully
+                    content:
+                        application/json:
+                            schema:
+                                properties:
+                                    productID:
+                                        type: string
+                                        example: "123414"
+                400:
+                    $ref: "#/components/responses/BadRequest"
+                401:
+                    $ref: "#/components/responses/Unauthorized"
+    /inventory/products/{productID}:
+        delete:
+            tags:
+                - inventory
+            summary: Remove product from inventory
+            description: Remove a specific product from the inventory
+            operationId: removeProductFromInventory
+            parameters:
+              - name: productID
+                in: path
+                description: ID of the product to remove
+                required: true
+                schema:
+                    type: string
+                    example: "prod123"
+            responses:
+                204:
+                    description: Product removed from inventory successfully
+                400:
+                    $ref: "#/components/responses/BadRequest"
+                401:
+                    $ref: "#/components/responses/Unauthorized"
+                404:
+                    $ref: "#/components/responses/NotFoundResponse"
+        patch:
+            tags:
+                - inventory
+            summary: Update details of an existing product
+            description: Update details of an existing product in the inventory
+            operationId: updateProductDetails
+            parameters:
+              - name: productID
+                in: path
+                description: ID of the product to remove
+                required: true
+                schema:
+                    type: string
+                    example: "prod123"
+            requestBody:
+                required: true
+                description: Partially or fully updated product information.
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/Product"
+            responses:
+                200:
+                    description: Product details updated successfully
+                400:
+                    $ref: "#/components/responses/BadRequest"
+                401:
+                    $ref: "#/components/responses/Unauthorized"
+                404:
+                    $ref: "#/components/responses/NotFoundResponse"
+    /services:
+        post:
+            tags:
+                - services
+            summary: Create a new service
+            description: Endpoint for creating a new service
+            operationId: createService
+            requestBody:
+                required: true
+                description: Service information
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/Service"
+            responses:
+                201:
+                    description: Service created successfully
+                    content:
+                        application/json:
+                            schema:
+                                properties:
+                                    serviceID:
+                                        type: string
+                                        example: "serv123"
+                                        
+                400:
+                    $ref: "#/components/responses/BadRequest"
+                401:
+                    $ref: "#/components/responses/Unauthorized"
+        get:
+            tags:
+                - services
+            summary: Retrieve a list of all services
+            description: Endpoint for retrieving a list of all services
+            operationId: listServices
+            responses:
+                200:
+                    description: List of services retrieved successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ServicesListResponse"
+                401:
+                    $ref: "#/components/responses/Unauthorized"
+    /services/{serviceID}:
+        get:
+            tags:
+                - services
+            summary: Retrieve details of a specific service
+            description: Endpoint for retrieving details of a specific service
+            operationId: getServiceById
+            parameters:
+              - name: serviceID
+                in: path
+                description: ID of the service to retrieve
+                required: true
+                schema:
+                    type: string
+                    example: 'service123'
+            responses:
+                200:
+                    description: Service details retrieved successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Service"
+                401:
+                    $ref: "#/components/responses/Unauthorized"
+                404:
+                    $ref: "#/components/responses/NotFoundResponse"
+
+        put:
+            tags:
+                - services
+            summary: Update an existing service
+            description: Endpoint for updating details of an existing service
+            operationId: updateServiceById
+            parameters:
+              - name: serviceID
+                in: path
+                description: ID of the service to update
+                required: true
+                schema:
+                    type: string
+                    example: 'service123'
+            requestBody:
+                required: true
+                description: Updated service information
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/Service"
+            responses:
+                200:
+                    description: Service updated successfully
+                400:
+                    $ref: "#/components/responses/BadRequest"
+                401:
+                    $ref: "#/components/responses/Unauthorized"
+                404:
+                    $ref: "#/components/responses/NotFoundResponse"
+        delete:
+            tags:
+                - services
+            summary: Delete an existing service
+            description: Endpoint for deleting an existing service
+            operationId: deleteServiceById
+            parameters:
+              - name: serviceID
+                in: path
+                description: ID of the service to delete
+                required: true
+                schema:
+                    type: string
+                    example: 'service123'
+            responses:
+                204:
+                    description: Service deleted successfully
+                401:
+                    $ref: "#/components/responses/Unauthorized"
+                404:
+                    $ref: "#/components/responses/NotFoundResponse"
+    /reservations:
+        post:
+            tags:
+                - reservation
+            summary: Create a new reservation
+            description: Endpoint for creating a new reservation
+            operationId: createReservation
+            requestBody:
+                required: true
+                description: Reservation information
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/Reservation"
+            responses:
+                201:
+                    description: Reservation created successfully
+                400:
+                    $ref: "#/components/responses/BadRequest"
+                401:
+                    $ref: "#/components/responses/Unauthorized"
+        get:
+            tags:
+                - reservation
+            summary: Retrieve a list of all reservations
+            description: Endpoint for retrieving a list of all reservations with optional filters
+            operationId: getReservations
+            parameters:
+              - name: startDate
+                in: query
+                description: Start date for filtering reservations
+                required: false
+                schema:
+                    type: string
+                    format: date-time
+                    example: "2023-01-01T00:00:00"
+              - name: endDate
+                in: query
+                description: End date for filtering reservations
+                required: false
+                schema:
+                    type: string
+                    format: date-time
+                    example: "2023-12-31T23:59:59"
+              - name: customerID
+                in: query
+                description: Filter by customer ID
+                required: false
+                schema:
+                    type: string
+                    example: "cus123"
+              - name: serviceID
+                in: query
+                description: Filter by service ID
+                required: false
+                schema:
+                    type: string
+                    example: "service123"
+            responses:
+                200:
+                    description: List of reservations retrieved successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ReservationsListResponse"
+                400:
+                    $ref: "#/components/responses/BadRequest"
+                401:
+                    $ref: "#/components/responses/Unauthorized"
+    /reservations/{reservationID}:
+        get:
+            tags:
+                - reservation
+            summary: Retrieve details of a specific reservation
+            description: Endpoint for retrieving details of a specific reservation
+            operationId: getReservationById
+            parameters:
+              - name: reservationID
+                in: path
+                description: ID of the reservation to retrieve
+                required: true
+                schema:
+                    type: string
+                    example: 'reservation123'
+            responses:
+                200:
+                    description: Reservation details retrieved successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Reservation'
+                400:
+                    $ref: '#/components/responses/BadRequest'
+                401:
+                    $ref: '#/components/responses/Unauthorized'
+                404:
+                    $ref: '#/components/responses/NotFoundResponse'
+        patch:
+            tags:
+                - reservation
+            summary: Update an existing reservation
+            description: Endpoint for updating details of an existing reservation
+            operationId: updateReservationById
+            parameters:
+              - name: reservationID
+                in: path
+                description: ID of the reservation to update
+                required: true
+                schema:
+                    type: string
+                    example: 'reservation123'
+            requestBody:
+                required: true
+                description: Updated reservation information
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/Reservation'
+            responses:
+                200:
+                    description: Reservation updated successfully
+                400:
+                    $ref: '#/components/responses/BadRequest'
+                401:
+                    $ref: '#/components/responses/Unauthorized'
+                404:
+                    $ref: '#/components/responses/NotFoundResponse'
+        delete:
+            tags:
+                - reservation
+            summary: Delete an existing reservation
+            description: Endpoint for deleting an existing reservation
+            operationId: deleteReservationById
+            parameters:
+              - name: reservationID
+                in: path
+                description: ID of the reservation to delete
+                required: true
+                schema:
+                    properties:
+                        reservationID:
+                            type: string
+                            example: "reservation123"
+            responses:
+                204:
+                    description: Reservation deleted successfully
+                400:
+                    $ref: '#/components/responses/BadRequest'
+                401:
+                    $ref: '#/components/responses/Unauthorized'
+                404:
+                    $ref: '#/components/responses/NotFoundResponse'
+    /promotions/{type}:
+        get:
+            tags:
+                - promotion
+            summary: Retrieve all available discounts or coupons by type
+            description: Endpoint for retrieving all available discounts or coupons based on the type
+            operationId: getPromotionsByType
+            parameters:
+              - name: type
+                in: path
+                description: Type of promotion (e.g., discount, coupon)
+                required: true
+                schema:
+                    type: string
+                    example: 'coupon'
+                    enum:
+                    - discount
+                    - coupon
+            responses:
+                200:
+                    description: List of promotions retrieved successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PromotionsListResponse'
+                400:
+                    $ref: '#/components/responses/BadRequest'
+                401:
+                    $ref: '#/components/responses/Unauthorized'
+    /promotions/{promotionID}:
+        get:
+            tags:
+                - promotion
+            summary: Retrieve details of a specific promotion
+            description: Endpoint for retrieving details of a specific promotion
+            operationId: getPromotionById
+            parameters:
+              - name: promotionID
+                in: path
+                description: ID of the promotion to retrieve
+                required: true
+                schema:
+                    properties:
+                        promotionID:
+                            type: string
+                            example: "promo1234"
+            responses:
+                200:
+                    description: Promotion details retrieved successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Promotion'
+                400:
+                    $ref: '#/components/responses/BadRequest'
+                401:
+                    $ref: '#/components/responses/Unauthorized'
+                404:
+                    $ref: '#/components/responses/NotFoundResponse'
+    /order/{orderID}/promotion/{type}:
+        post:
+            tags:
+                - orders
+            summary: Apply a discount or coupon to an order
+            description: Endpoint for applying a discount or coupon of a specific type to a specific order
+            operationId: applyDiscountOrCouponToOrder
+            parameters:
+              - name: orderID
+                in: path
+                description: ID of the order to apply the discount or coupon
+                required: true
+                schema:
+                    type: string
+                    example: 'order123'
+              - name: type
+                in: path
+                description: Type of the promotion (discount or coupon)
+                required: true
+                schema:
+                    type: string
+                    enum: ['discount', 'coupon']
+            requestBody:
+                required: true
+                description: Discount or coupon information to apply to the order
+                content:
+                    application/json:
+                        schema:
+                            oneOf:
+                                - $ref: '#/components/schemas/DiscountApplication'
+                                - $ref: '#/components/schemas/CouponApplication'
+            responses:
+                200:
+                    description: Discount or coupon applied successfully
+                400:
+                    $ref: '#/components/responses/BadRequest'
+                401:
+                    $ref: '#/components/responses/Unauthorized'
+                404:
+                    $ref: '#/components/responses/NotFoundResponse'
+components:
+    schemas:
+        AuthInfo:
+            properties:
+                username:
+                    type: string
+                    example: "bestemployee"
+                password:
+                    type: string
+                    example: "mifstudvult"
+        LogInResponse:
+            properties:
+                token:
+                    type: string
+                    example: "npe3413fk0dir20234401"
+        AuthFailResponse:
+            properties:
+                message:
+                    description: A message indicating successful login
+                    type: string
+                    example: "Invalid username or password"
+        LogOutResponse:
+            properties:
+                message:
+                    description: A message indicating successful logout
+                    type: string
+                    example: "Logout successful"
+        Order:
+            properties:
+                orderId:
+                    type: string
+                    description: ID of the order
+                    example: "cus123"
+                customerId:
+                    type: string
+                    description: ID of the customer placing the order
+                    example: "cus123"
+                status:
+                    type: string
+                    enum: ["created","in progress","done", "paid","cancelled"]
+                    example: "created"
+                products:
+                    type: array
+                    description: List of products in the order
+                    items:
+                        type: object
+                        properties:
+                            productID:
+                                type: string
+                                description: ID of the product
+                                example: "prod123"
+                            quantity:
+                                type: integer
+                                description: Quantity of the product in the order
+                                example: 2
+        OrdersListResponse:
+            type: object
+            properties:
+                orders:
+                    type: array
+                    description: List of orders
+                    items:
+                        $ref: "#/components/schemas/Order"
+        InventoryProductsResponse:
+            type: object
+            properties:
+                products:
+                    type: array
+                    description: List of products in the inventory
+                    items:
+                        $ref: "#/components/schemas/Product"
+        Product:
+            type: object
+            properties:
+                productID:
+                    type: string
+                    description: ID of the product. generated when calling POST to /inventory/products
+                    example: "prod123"
+                name:
+                    type: string
+                    description: Name of the product
+                    example: "Seafood"
+                productDesc:
+                    type: string
+                    description: Description of the product
+                    example: "A high-quality seafood"
+                price:
+                    type: number
+                    format: float
+                    description: Price of the product
+                    example: 19.99
+        ServicesListResponse:
+            type: object
+            properties:
+                services:
+                    type: array
+                    description: List of services
+                    items:
+                        $ref: "#/components/schemas/Service"
+        Service:
+            type: object
+            properties:
+                serviceId:
+                    type: string
+                    description: ID of the service
+                    example: "service123"
+                serviceName:
+                    type: string
+                    description: Name of the service
+                    example: "Table Reservation"
+                serviceDesc:
+                    type: string
+                    description: Description of the service
+                    example: "Reservation for a table in the restaurant"
+                cost:
+                    type: number
+                    format: float
+                    description: Cost of the service
+                    example: 10.99
+                durationMinutes:
+                    type: integer
+                    description: Duration of the service in minutes
+                    example: 60
+                availableTables:
+                    type: integer
+                    description: Number of available tables for reservation if any
+                    example: 5
+        Reservation:
+            type: object
+            properties:
+                reservationId:
+                    type: string
+                    description: ID of the reservation
+                    example: "reservation123"
+                customerId:
+                    type: string
+                    description: ID of the customer making the reservation
+                    example: "cus123"
+                serviceID:
+                    type: string
+                    description: ID of the service for the reservation
+                    example: "service123"
+                reservationDateTime:
+                    type: string
+                    format: date-time
+                    description: Date and time of the reservation
+                    example: "2023-01-01T18:00:00"
+                partySize:
+                    type: integer
+                    description: Number of people in the reservation party
+                    example: 4
+        ReservationsListResponse:
+            type: object
+            properties:
+                reservations:
+                    type: array
+                    description: List of reservations
+                    items:
+                        $ref: "#/components/schemas/Reservation"
+        PromotionsListResponse:
+            type: object
+            properties:
+                promotions:
+                    type: array
+                    description: List of promotions
+                    items:
+                        $ref: "#/components/schemas/Promotion"
+        Promotion:
+            type: object
+            properties:
+                promotionId:
+                    type: string
+                    description: ID of the promotion
+                    example: 'promo123'
+                promotionType:
+                    type: string
+                    description: Type of promotion (e.g., discount, coupon)
+                    example: 'discount'
+                details:
+                    type: object
+                    description: Details of the promotion
+                    oneOf:
+                        - $ref: "#/components/schemas/Discount"
+                        - $ref: "#/components/schemas/Coupon"
+
+        Discount:
+            type: object
+            properties:
+                percentage:
+                    type: number
+                    description: Percentage discount
+                    example: 10
+
+        Coupon:
+            type: object
+            properties:
+                flatAmount:
+                    type: number
+                    description: Flat amount in euros for the coupon
+                    example: 5
+        DiscountApplication:
+            type: object
+            properties:
+                promotionID:
+                    type: string
+                    description: ID of the discount promotion to apply
+                    example: 'promo123'
+                discountAmount:
+                    type: number
+                    description: Amount of the discount to apply
+                    example: 5
+
+        CouponApplication:
+            type: object
+            properties:
+                promotionID:
+                    type: string
+                    description: ID of the coupon promotion to apply
+                    example: 'coupon123'
+    responses:
+        Unauthorized:
+            description: Unauthorized
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            error:
+                                type: string
+                                example: "Unauthorized"
+        BadRequest:
+            description: Bad Request
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            error:
+                                type: string
+                                example: "Bad Request"
+        NotFoundResponse:
+            description: Queried resource not found
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            error:
+                                type: string
+                                example: 'Resource not found'
+
+    securitySchemes:
+        ApiKey:
+            type: apiKey
+            in: header
+            name: X-Api-Key
+security:
+    - ApiKey: []
